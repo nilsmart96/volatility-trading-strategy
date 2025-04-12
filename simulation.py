@@ -95,7 +95,11 @@ def simulate_pair_strategy(df: pd.DataFrame,
                 long_active = False
             else:
                 prev_long = sim_df.at[i - 1, 'Long Value']
-                sim_df.at[i, 'Long Value'] = prev_long * (1 + multiplier * daily_return)
+                new_long = prev_long * (1 + multiplier * daily_return)
+                if new_long < 0:
+                    new_long = 0.0
+                sim_df.at[i, 'Long Value'] = new_long
+
         else:
             sim_df.at[i, 'Long Value'] = 0.0
         
@@ -106,7 +110,10 @@ def simulate_pair_strategy(df: pd.DataFrame,
                 short_active = False
             else:
                 prev_short = sim_df.at[i - 1, 'Short Value']
-                sim_df.at[i, 'Short Value'] = prev_short * (1 - multiplier * daily_return)
+                new_short = prev_short * (1 - multiplier * daily_return)
+                if new_short < 0:
+                    new_short = 0.0
+                sim_df.at[i, 'Short Value'] = new_short
         else:
             sim_df.at[i, 'Short Value'] = 0.0
         
