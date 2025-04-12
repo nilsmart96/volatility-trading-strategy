@@ -84,39 +84,33 @@ def simulate_pair_strategy(df: pd.DataFrame,
     # Simulate day-by-day performance
     for i in range(1, len(sim_df)):
         current_close = sim_df.at[i, 'Close']
-        previous_close = sim_df.at[i - 1, 'Close']
-        # Calculate the total return based on closing prices
-        total_return = (current_close / entry_price) - 1
+        day_low = sim_df.at[i, 'Low']
+        day_high = sim_df.at[i, 'High']
 
-        # For the long certificate: Use the day's low to check for knockout
+        # Long certificate
         if long_active:
-            if sim_df.at[i, 'Low'] <= long_knockout_level:
+            if day_low <= long_knockout_level:
                 sim_df.at[i, 'Long Value'] = 0.0
                 long_active = False
             else:
-                prev_long = sim_df.at[i - 1, 'Long Value']
-                new_long = prev_long * (1 + multiplier * total_return)
-                if new_long < 0:
-                    new_long = 0.0
-                sim_df.at[i, 'Long Value'] = new_long
-
+                long_return = (current_close - entry_price) / entry_price
+                new_long = net_investment * (1 + multiplier * long_return)
+                sim_df.at[i, 'Long Value'] = max(new_long, 0.0)
         else:
             sim_df.at[i, 'Long Value'] = 0.0
-        
-        # For the short certificate: Use the day's high to check for knockout
+
+        # Short certificate
         if short_active:
-            if sim_df.at[i, 'High'] >= short_knockout_level:
+            if day_high >= short_knockout_level:
                 sim_df.at[i, 'Short Value'] = 0.0
                 short_active = False
             else:
-                prev_short = sim_df.at[i - 1, 'Short Value']
-                new_short = prev_short * (1 - multiplier * total_return)
-                if new_short < 0:
-                    new_short = 0.0
-                sim_df.at[i, 'Short Value'] = new_short
+                short_return = (entry_price - current_close) / entry_price
+                new_short = net_investment * (1 + multiplier * short_return)
+                sim_df.at[i, 'Short Value'] = max(new_short, 0.0)
         else:
             sim_df.at[i, 'Short Value'] = 0.0
-        
+
         # Combined portfolio is the sum of long and short positions
         sim_df.at[i, 'Combined Value'] = sim_df.at[i, 'Long Value'] + sim_df.at[i, 'Short Value']
     
