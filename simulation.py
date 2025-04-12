@@ -85,8 +85,8 @@ def simulate_pair_strategy(df: pd.DataFrame,
     for i in range(1, len(sim_df)):
         current_close = sim_df.at[i, 'Close']
         previous_close = sim_df.at[i - 1, 'Close']
-        # Calculate the daily return based on closing prices
-        daily_return = (current_close / previous_close) - 1
+        # Calculate the total return based on closing prices
+        total_return = (current_close / entry_price) - 1
 
         # For the long certificate: Use the day's low to check for knockout
         if long_active:
@@ -95,7 +95,7 @@ def simulate_pair_strategy(df: pd.DataFrame,
                 long_active = False
             else:
                 prev_long = sim_df.at[i - 1, 'Long Value']
-                new_long = prev_long * (1 + multiplier * daily_return)
+                new_long = prev_long * (1 + multiplier * total_return)
                 if new_long < 0:
                     new_long = 0.0
                 sim_df.at[i, 'Long Value'] = new_long
@@ -110,7 +110,7 @@ def simulate_pair_strategy(df: pd.DataFrame,
                 short_active = False
             else:
                 prev_short = sim_df.at[i - 1, 'Short Value']
-                new_short = prev_short * (1 - multiplier * daily_return)
+                new_short = prev_short * (1 - multiplier * total_return)
                 if new_short < 0:
                     new_short = 0.0
                 sim_df.at[i, 'Short Value'] = new_short
