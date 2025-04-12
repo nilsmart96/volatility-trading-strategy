@@ -87,6 +87,23 @@ def main():
         ax2.set_ylabel('Normalized S&P 500 Value ($)', color='red')
         ax2.tick_params(axis='y', labelcolor='red')
 
+        # ---------------------
+        # Added horizontal lines
+        #
+        # Compute knockout levels (normalized) on the underlying asset:
+        #   For long: underlying knockout at entry_price*(1 - long_barrier_pct) => normalized to initial_investment*(1 - long_barrier_pct)
+        #   For short: underlying knockout at entry_price*(1 + short_barrier_pct) => normalized to initial_investment*(1 + short_barrier_pct)
+        long_knockout_norm = initial_investment * (1 - long_barrier_pct)
+        short_knockout_norm = initial_investment * (1 + short_barrier_pct)
+        ax2.axhline(long_knockout_norm, color='grey', linestyle=':', label='Long Knockout Value')
+        ax2.axhline(short_knockout_norm, color='grey', linestyle=':', label='Short Knockout Value')
+
+        # Compute the “in the money” value as twice the net investment of each certificate.
+        # (net_investment = initial_investment - (entry_cost + spread))
+        in_the_money_value = 2 * (initial_investment - (entry_cost + spread))
+        ax1.axhline(in_the_money_value, color='green', linestyle='-.', label='In the Money Value')
+        # ---------------------
+
         ax1.set_title('Paired Knockout Strategy vs. Normalized S&P 500 Performance')
         fig.autofmt_xdate(rotation=45)
         fig.tight_layout()

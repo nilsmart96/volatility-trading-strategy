@@ -35,7 +35,7 @@ def simulate_pair_strategy(df: pd.DataFrame,
     Simulates the performance of a paired knockout certificate strategy.
 
     Parameters:
-        df (pd.DataFrame): Historical market data containing at least 'Date' and 'Adj Close'.
+        df (pd.DataFrame): Historical market data containing at least 'Date', 'Close', 'High', and 'Low'.
         start_date (str): The entry date in 'YYYY-MM-DD' format.
         multiplier (float): Leverage factor (e.g. 3.0 for 3× exposure).
         long_barrier_pct (float): Knockout barrier for the long position (e.g. 0.10 for 10% drop).
@@ -47,7 +47,7 @@ def simulate_pair_strategy(df: pd.DataFrame,
     Returns:
         pd.DataFrame: DataFrame with columns 'Date', 'Long Value', 'Short Value', and 'Combined Value'.
     '''
-    # Convert 'Date' to datetime with UTC and then remove timezone info
+    # Convert 'Date' to datetime (assume UTC) and sort the DataFrame
     df['Date'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert(None)
     df = df.sort_values('Date').reset_index(drop=True)
     
@@ -57,10 +57,10 @@ def simulate_pair_strategy(df: pd.DataFrame,
     if sim_df.empty:
         raise ValueError('No data available from the specified start date.')
     
-    # Use the entry price from the adjusted close on the entry date
+    # Use the entry price from the 'Close' on the entry date
     entry_price = sim_df.iloc[0]['Close']
     
-    # Deduct entry cost and spread from initial investment for each certificate
+    # Deduct entry cost and spread from the initial investment for each certificate
     net_investment = initial_investment - (entry_cost + spread)
     
     # Initialize the columns for the two positions with net_investment at day 0
@@ -79,19 +79,18 @@ def simulate_pair_strategy(df: pd.DataFrame,
     # Initialize the first day
     sim_df.at[0, 'Long Value'] = net_investment
     sim_df.at[0, 'Short Value'] = net_investment
-    sim_df.at[0, 'Combined Value'] = sim_df.at[0, 'Long Value'] + sim_df.at[0, 'Short Value']
+    sim_df.at[0, 'Combined Value'] = net_investment * 2
     
     # Simulate day-by-day performance
     for i in range(1, len(sim_df)):
-        current_price = sim_df.at[i, 'Close']
-        previous_price = sim_df.at[i - 1, 'Close']
-        daily_return = (current_price / previous_price) - 1
+        current_close = sim_df.at[i, 'Close']
+        previous_close = sim_df.at[i - 1, 'Close']
+        # Calculate the daily return based on closing prices
+        daily_return = (current_close / previous_close) - 1
 
-        print(daily_return)
-
-        # For the long certificate
+        # For the long certificate: Use the day's low to check for knockout
         if long_active:
-            if current_price <= long_knockout_level:
+            if sim_df.at[i, 'Low'] <= long_knockout_level:
                 sim_df.at[i, 'Long Value'] = 0.0
                 long_active = False
             else:
@@ -100,9 +99,9 @@ def simulate_pair_strategy(df: pd.DataFrame,
         else:
             sim_df.at[i, 'Long Value'] = 0.0
         
-        # For the short certificate (note: for short, a decline in the underlying yields gains)
+        # For the short certificate: Use the day's high to check for knockout
         if short_active:
-            if current_price >= short_knockout_level:
+            if sim_df.at[i, 'High'] >= short_knockout_level:
                 sim_df.at[i, 'Short Value'] = 0.0
                 short_active = False
             else:
@@ -129,8 +128,8 @@ if __name__ == '__main__':
     results = simulate_pair_strategy(data,
                                      start_date='2025-04-01',
                                      multiplier=10.0,
-                                     long_barrier_pct=0.005,
-                                     short_barrier_pct=0.005,
+                                     long_barrier_pct=0.02,
+                                     short_barrier_pct=0.02,
                                      initial_investment=100.0,
                                      entry_cost=5.0,
                                      spread=3.0)
