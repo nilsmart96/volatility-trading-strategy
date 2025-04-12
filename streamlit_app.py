@@ -103,7 +103,7 @@ def main():
         ax2.axhline(short_knockout_norm, color='grey', linestyle=':', label='Short Knockout Value')
 
         # Add horizontal line for the "in the money" value on the left axis
-        in_the_money_value = 2 * (initial_investment - (entry_cost + spread))
+        in_the_money_value = 2 * (initial_investment + (entry_cost + spread))
         ax1.axhline(in_the_money_value, color='green', linestyle='-.', label='In the Money Value')
         # ---------------------
 
