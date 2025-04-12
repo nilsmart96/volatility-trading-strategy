@@ -62,11 +62,24 @@ def main():
             df = df.sort_values('Date').reset_index(drop=True)
             start_date_dt = pd.to_datetime(start_date.strftime('%Y-%m-%d'))
             comp_df = df[df['Date'] >= start_date_dt].copy().reset_index(drop=True)
+            
+            # Calculate the 'normalized' close
             entry_price = comp_df.iloc[0]['Close']
             comp_df['Normalized S&P500'] = initial_investment * (comp_df['Close'] / entry_price)
+            
+            # ---------------------
+            # Add normalized High/Low for the daily vertical lines
+            comp_df['Normalized High'] = initial_investment * (comp_df['High'] / entry_price)
+            comp_df['Normalized Low'] = initial_investment * (comp_df['Low'] / entry_price)
+            # ---------------------
 
-            # Merge the simulation results with the normalized S&P500 data
-            merged_df = pd.merge(sim_df, comp_df[['Date', 'Normalized S&P500']], on='Date', how='left')
+            # Merge the simulation results with the normalized S&P500 data (including high/low)
+            merged_df = pd.merge(
+                sim_df,
+                comp_df[['Date', 'Normalized S&P500', 'Normalized High', 'Normalized Low']],
+                on='Date',
+                how='left'
+            )
 
         st.success('Simulation complete!')
 
@@ -81,28 +94,29 @@ def main():
         ax1.set_ylabel('Knockout Portfolio Value ($)', color='blue')
         ax1.tick_params(axis='y', labelcolor='blue')
 
-        # Plot normalized S&P 500 on the right axis
+        # ---------------------
+        # Plot vertical bars for daily High-Low on the right axis:
+        ax2.vlines(
+            merged_df['Date'], 
+            merged_df['Normalized Low'], 
+            merged_df['Normalized High'],
+            color='gray', 
+            alpha=0.6, 
+            linewidth=1, 
+            label='Daily High-Low'
+        )
+        # Keep the red line for Normalized Close:
         ax2.plot(merged_df['Date'], merged_df['Normalized S&P500'],
                  color='red', linestyle='--', label='Normalized S&P 500')
+        # ---------------------
+
         ax2.set_ylabel('Normalized S&P 500 Value ($)', color='red')
         ax2.tick_params(axis='y', labelcolor='red')
 
-        # ---------------------
-        # Added horizontal lines
-        #
-        # Compute knockout levels (normalized) on the underlying asset:
-        #   For long: underlying knockout at entry_price*(1 - long_barrier_pct) => normalized to initial_investment*(1 - long_barrier_pct)
-        #   For short: underlying knockout at entry_price*(1 + short_barrier_pct) => normalized to initial_investment*(1 + short_barrier_pct)
-        long_knockout_norm = initial_investment * (1 - long_barrier_pct)
-        short_knockout_norm = initial_investment * (1 + short_barrier_pct)
-        ax2.axhline(long_knockout_norm, color='grey', linestyle=':', label='Long Knockout Value')
-        ax2.axhline(short_knockout_norm, color='grey', linestyle=':', label='Short Knockout Value')
-
-        # Compute the “in the money” value as twice the net investment of each certificate.
-        # (net_investment = initial_investment - (entry_cost + spread))
-        in_the_money_value = 2 * (initial_investment - (entry_cost + spread))
-        ax1.axhline(in_the_money_value, color='green', linestyle='-.', label='In the Money Value')
-        # ---------------------
+        # Add legend for both axes
+        lines_1, labels_1 = ax1.get_legend_handles_labels()
+        lines_2, labels_2 = ax2.get_legend_handles_labels()
+        ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left')
 
         ax1.set_title('Paired Knockout Strategy vs. Normalized S&P 500 Performance')
         fig.autofmt_xdate(rotation=45)
@@ -111,7 +125,8 @@ def main():
 
         # Always display the merged result table below the plot
         st.subheader('Simulation Results')
-        st.dataframe(merged_df[['Date', 'Long Value', 'Short Value', 'Combined Value', 'Normalized S&P500']].reset_index(drop=True))
+        st.dataframe(merged_df[['Date', 'Long Value', 'Short Value', 'Combined Value', 
+                                'Normalized S&P500']].reset_index(drop=True))
 
 
 if __name__ == '__main__':
