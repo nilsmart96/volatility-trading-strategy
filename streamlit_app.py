@@ -92,17 +92,6 @@ def main():
         ax1.set_ylabel('Knockout Portfolio Value ($)', color='blue')
         ax1.tick_params(axis='y', labelcolor='blue')
 
-        # ---------------------
-        # Plot vertical bars for daily High-Low on the right axis:
-        ax2.vlines(
-            merged_df['Date'], 
-            merged_df['Normalized Low'], 
-            merged_df['Normalized High'],
-            color='gray', 
-            alpha=0.6, 
-            linewidth=1, 
-            label='Daily High-Low'
-        )
         # Plot normalized S&P 500 line
         ax2.plot(merged_df['Date'], merged_df['Normalized S&P500'],
                  color='red', linestyle='--', label='Normalized S&P 500')
