@@ -30,16 +30,16 @@ def main():
 
     # Sidebar: parameters for simulation.
     st.sidebar.header('Simulation Parameters')
-    start_date = st.sidebar.date_input('Simulation Start Date', datetime(2020, 1, 1))
+    start_date = st.sidebar.date_input('Simulation Start Date', datetime(2025, 4, 1))
     multiplier = st.sidebar.number_input('Leverage Multiplier (e.g. 3 for 3x)',
-                                           min_value=1.0, value=3.0, step=0.5)
+                                           min_value=1.0, value=10.0, step=0.5)
     long_barrier_pct = st.sidebar.number_input('Long Knockout Barrier (% drop from entry)',
-                                               min_value=0.0, value=10.0, step=0.5) / 100
+                                               min_value=0.0, value=11.0, step=0.5) / 100
     short_barrier_pct = st.sidebar.number_input('Short Knockout Barrier (% rise from entry)',
-                                                min_value=0.0, value=10.0, step=0.5) / 100
+                                                min_value=0.0, value=11.0, step=0.5) / 100
     initial_investment = st.sidebar.number_input('Initial Investment per Position ($)',
                                                    min_value=1.0, value=100.0, step=10.0)
-    entry_cost = st.sidebar.number_input('Entry Cost ($)', min_value=0.0, value=5.0, step=0.5)
+    entry_cost = st.sidebar.number_input('Entry/Exit Cost ($)', min_value=0.0, value=5.0, step=0.5)
     spread = st.sidebar.number_input('Spread ($)', min_value=0.0, value=3.0, step=0.5)
 
     if st.sidebar.button('Run Simulation'):
