@@ -63,16 +63,14 @@ def main():
             start_date_dt = pd.to_datetime(start_date.strftime('%Y-%m-%d'))
             comp_df = df[df['Date'] >= start_date_dt].copy().reset_index(drop=True)
             
-            # Calculate the 'normalized' close
+            # Calculate the normalized close
             entry_price = comp_df.iloc[0]['Close']
             comp_df['Normalized S&P500'] = initial_investment * (comp_df['Close'] / entry_price)
             
-            # ---------------------
             # Add normalized High/Low for the daily vertical lines
             comp_df['Normalized High'] = initial_investment * (comp_df['High'] / entry_price)
             comp_df['Normalized Low'] = initial_investment * (comp_df['Low'] / entry_price)
-            # ---------------------
-
+            
             # Merge the simulation results with the normalized S&P500 data (including high/low)
             merged_df = pd.merge(
                 sim_df,
@@ -105,9 +103,19 @@ def main():
             linewidth=1, 
             label='Daily High-Low'
         )
-        # Keep the red line for Normalized Close:
+        # Plot normalized S&P 500 line
         ax2.plot(merged_df['Date'], merged_df['Normalized S&P500'],
                  color='red', linestyle='--', label='Normalized S&P 500')
+
+        # Add horizontal lines for knockout levels on the normalized axis
+        long_knockout_norm = initial_investment * (1 - long_barrier_pct)
+        short_knockout_norm = initial_investment * (1 + short_barrier_pct)
+        ax2.axhline(long_knockout_norm, color='grey', linestyle=':', label='Long Knockout Value')
+        ax2.axhline(short_knockout_norm, color='grey', linestyle=':', label='Short Knockout Value')
+
+        # Add horizontal line for the "in the money" value on the left axis
+        in_the_money_value = 2 * (initial_investment - (entry_cost + spread))
+        ax1.axhline(in_the_money_value, color='green', linestyle='-.', label='In the Money Value')
         # ---------------------
 
         ax2.set_ylabel('Normalized S&P 500 Value ($)', color='red')
