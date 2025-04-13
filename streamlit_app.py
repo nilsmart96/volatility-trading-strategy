@@ -123,7 +123,13 @@ def main():
         # Add legend for both axes
         lines_1, labels_1 = ax1.get_legend_handles_labels()
         lines_2, labels_2 = ax2.get_legend_handles_labels()
-        ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left')
+        ax2.legend(
+            lines_1 + lines_2,
+            labels_1 + labels_2,
+            loc='upper center',
+            bbox_to_anchor=(0.5, -0.15),
+            ncol=2  # Optional: number of columns if you want a horizontal legend
+            )
 
         ax1.set_title(f'Paired Knockout Strategy vs. Normalized {asset_name} Performance')
         fig.autofmt_xdate(rotation=45)
