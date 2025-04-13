@@ -127,7 +127,7 @@ def main():
             lines_1 + lines_2,
             labels_1 + labels_2,
             loc='upper center',
-            bbox_to_anchor=(0.5, -0.15),
+            bbox_to_anchor=(0.5, -0.25),
             ncol=2  # Optional: number of columns if you want a horizontal legend
             )
 
