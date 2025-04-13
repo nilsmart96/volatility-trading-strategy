@@ -2,13 +2,13 @@
 '''
 streamlit_app.py
 
-Streamlit application that fetches historical S&P 500 data,
+Streamlit application that fetches historical asset data,
 runs a paired knockout certificate simulation (including entry cost and spread),
 and displays a performance graph with two y-axes:
   - Left axis: Combined knockout strategy portfolio value.
-  - Right axis: Normalized S&P 500 performance.
+  - Right axis: Normalized asset performance.
 
-Below the plot, a merged result table is shown that includes dates, knockout values, and normalized S&P 500 values.
+Below the plot, a merged result table is shown that includes dates, knockout values, and normalized asset values.
 '''
 
 import streamlit as st
@@ -53,6 +53,7 @@ def main():
                 st.error(result['Error'])
             else:
                 df = result['historics']
+                asset_name = result['name']
 
             # Run paired knockout simulation
             sim_df = simulate_pair_strategy(
@@ -65,7 +66,7 @@ def main():
                 entry_cost=entry_cost,
                 spread=spread
             )
-            # For comparison: process the original S&P500 data from the simulation start date onward
+            # For comparison: process the original asset data from the simulation start date onward
             df['Date'] = pd.to_datetime(df['Date'], utc=True).dt.tz_convert(None)
             df = df.sort_values('Date').reset_index(drop=True)
             start_date_dt = pd.to_datetime(start_date.strftime('%Y-%m-%d'))
@@ -73,16 +74,16 @@ def main():
             
             # Calculate the normalized close
             entry_price = comp_df.iloc[0]['Close']
-            comp_df['Normalized S&P500'] = initial_investment * (comp_df['Close'] / entry_price)
+            comp_df[f'Normalized {asset_name}'] = initial_investment * (comp_df['Close'] / entry_price)
             
             # Add normalized High/Low for the daily vertical lines
             comp_df['Normalized High'] = initial_investment * (comp_df['High'] / entry_price)
             comp_df['Normalized Low'] = initial_investment * (comp_df['Low'] / entry_price)
             
-            # Merge the simulation results with the normalized S&P500 data (including high/low)
+            # Merge the simulation results with the normalized asset data (including high/low)
             merged_df = pd.merge(
                 sim_df,
-                comp_df[['Date', 'Normalized S&P500', 'Normalized High', 'Normalized Low']],
+                comp_df[['Date', f'Normalized {asset_name}', 'Normalized High', 'Normalized Low']],
                 on='Date',
                 how='left'
             )
@@ -100,9 +101,9 @@ def main():
         ax1.set_ylabel('Knockout Portfolio Value ($)', color='blue')
         ax1.tick_params(axis='y', labelcolor='blue')
 
-        # Plot normalized S&P 500 line
-        ax2.plot(merged_df['Date'], merged_df['Normalized S&P500'],
-                 color='red', linestyle='--', label='Normalized S&P 500')
+        # Plot normalized asset line
+        ax2.plot(merged_df['Date'], merged_df[f'Normalized {asset_name}'],
+                 color='red', linestyle='--', label=f'Normalized {asset_name}')
 
         # Add horizontal lines for knockout levels on the normalized axis
         long_knockout_norm = initial_investment * (1 - long_barrier_pct)
@@ -115,7 +116,7 @@ def main():
         ax1.axhline(in_the_money_value, color='green', linestyle='-.', label='In the Money Value')
         # ---------------------
 
-        ax2.set_ylabel('Normalized S&P 500 Value ($)', color='red')
+        ax2.set_ylabel(f'Normalized {asset_name} Value ($)', color='red')
         ax2.tick_params(axis='y', labelcolor='red')
 
         # Add legend for both axes
@@ -123,7 +124,7 @@ def main():
         lines_2, labels_2 = ax2.get_legend_handles_labels()
         ax2.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper left')
 
-        ax1.set_title('Paired Knockout Strategy vs. Normalized S&P 500 Performance')
+        ax1.set_title(f'Paired Knockout Strategy vs. Normalized {asset_name} Performance')
         fig.autofmt_xdate(rotation=45)
         fig.tight_layout()
         st.pyplot(fig)
@@ -131,7 +132,7 @@ def main():
         # Always display the merged result table below the plot
         st.subheader('Simulation Results')
         st.dataframe(merged_df[['Date', 'Long Value', 'Short Value', 'Combined Value', 
-                                'Normalized S&P500']].reset_index(drop=True))
+                                f'Normalized {asset_name}']].reset_index(drop=True))
 
 if __name__ == '__main__':
     main()
