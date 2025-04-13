@@ -8,10 +8,11 @@ Module to fetch historical S&P 500 market data from Yahoo Finance using yfinance
 import os
 import yfinance as yf
 import pandas as pd
+from typing import Dict, Any
 
 
-def get_sp500_data(start_date: str = '2000-01-01', end_date: str = None, save_csv: bool = False,
-                   csv_filename: str = 'sp500_data.csv') -> pd.DataFrame:
+def get_yf_data(start_date: str = '2000-01-01', end_date: str = None, save_csv: bool = False,
+                   yf_ticker: str = '^GSPC') -> Dict[str, Any]:
     '''
     Fetches historical S&P 500 data from Yahoo Finance.
 
@@ -24,16 +25,29 @@ def get_sp500_data(start_date: str = '2000-01-01', end_date: str = None, save_cs
     Returns:
         pd.DataFrame: Historical data with dates as index.
     '''
-    # '^GSPC' is the ticker for the S&P 500
-    sp500 = yf.Ticker('^GSPC')
-    df = sp500.history(start=start_date, end=end_date)
+    try:
+        asset = yf.Ticker(yf_ticker)
+        info = asset.info
+        assetname = info.get("longName") or info.get("shortName") or yf_ticker
+    except Exception as e:
+        print(f'Ticker "{yf_ticker}" not found.')
+
+        return {'Error': e}
+
+    csv_filename = f'{assetname}_data.csv'
+    df = asset.history(start=start_date, end=end_date)
     df = df.reset_index()  # so that Date becomes a column
+
     if save_csv:
         df.to_csv(csv_filename, index=False)
-    return df
+
+    return {'name': assetname, 'historics': df}
 
 
 if __name__ == '__main__':
     # Example: fetch data from 2000 to today and save it to CSV.
-    df = get_sp500_data(save_csv=True)
-    print(f'Downloaded {len(df)} rows of data.')
+    result = get_yf_data(save_csv=True)
+    if 'Error' in result.keys():
+        print(result['Error'])
+    else:
+        print(f'Downloaded {len(result['historics'])} rows of data.')

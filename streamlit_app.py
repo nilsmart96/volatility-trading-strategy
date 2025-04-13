@@ -16,20 +16,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-from data_fetch import get_sp500_data
+from data_fetch import get_yf_data
 from simulation import simulate_pair_strategy
 
 
 def main():
     st.title('Paired Knockout Certificate Strategy Simulator')
-    st.write('This app simulates a paired knockout certificate strategy on the S&P 500 using historical data. '
-             'The simulation models a 3× leveraged long certificate (with a downside knockout barrier) and a 3× '
-             'leveraged short certificate (with an upside knockout barrier). Both positions incur an entry cost '
-             'and a spread. The chart below uses a separate axis for the normalized S&P 500 for clarity, and '
-             'the merged results table (including both knockout values and the S&P 500) is displayed below the plot.')
+    st.write('This app simulates a paired knockout certificate strategy on a given asset using historical data. '
+             'The simulation models a user defined leveraged long certificate (with a downside knockout barrier) and a '
+             'similar leveraged short certificate (with an upside knockout barrier). Both positions incur an entry cost '
+             'and a spread. The chart below uses a separate axis for the normalized underlying asset for clarity, and '
+             'the merged results table (including both knockout values and the underlying) is displayed below the plot.'
+             'Common Yahoo Finance Tickers are ^GSPC for the S&P500, ^NDX for the Nasdaq 100 or ^GDAXI for the DAX. '
+             'These can easily be found via Google or on Yahoo Finance.')
 
     # Sidebar: parameters for simulation.
     st.sidebar.header('Simulation Parameters')
+    asset = st.sidebar.text_input('Yahoo Finance Ticker Symbol (e.g. ^GSPC)', value='^GSPC')
     start_date = st.sidebar.date_input('Simulation Start Date', datetime(2025, 4, 1))
     multiplier = st.sidebar.number_input('Leverage Multiplier (e.g. 3 for 3x)',
                                            min_value=1.0, value=10.0, step=0.5)
@@ -45,7 +48,12 @@ def main():
     if st.sidebar.button('Run Simulation'):
         with st.spinner('Fetching historical data and running simulation...'):
             # Fetch historical data
-            df = get_sp500_data(start_date='2000-01-01', save_csv=False)
+            result = get_yf_data(start_date='2000-01-01', save_csv=False, yf_ticker=asset)
+            if 'Error' in result.keys():
+                st.error(result['Error'])
+            else:
+                df = result['historics']
+
             # Run paired knockout simulation
             sim_df = simulate_pair_strategy(
                 df,
@@ -124,7 +132,6 @@ def main():
         st.subheader('Simulation Results')
         st.dataframe(merged_df[['Date', 'Long Value', 'Short Value', 'Combined Value', 
                                 'Normalized S&P500']].reset_index(drop=True))
-
 
 if __name__ == '__main__':
     main()
