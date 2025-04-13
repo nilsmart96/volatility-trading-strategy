@@ -51,6 +51,7 @@ def main():
             result = get_yf_data(start_date='2000-01-01', save_csv=False, yf_ticker=asset)
             if 'Error' in result.keys():
                 st.error(f'Ticker not found: {asset}')
+                st.stop()
             else:
                 df = result['historics']
                 asset_name = result['name']
